@@ -148,10 +148,27 @@ class StorePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(store.name)),
       body: Column(children: [
+        const SizedBox(
+          height: 40,
+        ),
         Center(
           child: Image(
             image: AssetImage(store.imagePath),
             height: 100,
+          ),
+        ),
+        const SizedBox(
+          height: 40,
+        ),
+        Expanded(
+          child: ListView(
+            children: const [
+              Card(
+                child: ListTile(
+                  title: Text("T-Shirts"),
+                ),
+              )
+            ],
           ),
         )
       ]),

@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.0.5
 
 dev_dependencies:
   flutter_test:
@@ -18,4 +19,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets: 
-    - assets/stores-logos/
+    - assets/stores/american-eagle/
+    - assets/stores/american-eagle/t-shirts/
+    - assets/stores/hm/
+

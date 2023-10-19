@@ -1,3 +1,3 @@
 # e_commerce
 
-A new Flutter project.
+An eCommerce cross-platform mobile application built with flutter.

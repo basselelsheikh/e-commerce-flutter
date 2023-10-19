@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class Cart extends ChangeNotifier {
+  List<Product> products = [];
+  void add(Product product) {
+    products.add(product);
+    notifyListeners();
+  }
+}
 
 void main() {
-  runApp(const MainApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => Cart(),
+    child: const MainApp(),
+  ));
 }
 
 class MainApp extends StatelessWidget {
@@ -17,7 +29,7 @@ class MainApp extends StatelessWidget {
             child: Scaffold(
               appBar: AppBar(
                 title: const Text("eCommerce"),
-                bottom: const TabBar(tabs: [
+                bottom: TabBar(isScrollable: true, tabs: [
                   Tab(
                     icon: Icon(Icons.store),
                     text: "Stores",
@@ -27,7 +39,15 @@ class MainApp extends StatelessWidget {
                     text: "Products",
                   ),
                   Tab(
-                    icon: Icon(Icons.shopping_cart),
+                    icon: Consumer<Cart>(
+                      builder: (context, value, child) {
+                        return Badge(
+                            label: Text(value.products.length.toString()),
+                            child: const Icon(
+                              Icons.shopping_cart,
+                            ));
+                      },
+                    ),
                     text: "My Cart",
                   ),
                   Tab(
@@ -38,9 +58,9 @@ class MainApp extends StatelessWidget {
               ),
               body: const TabBarView(
                 children: [
-                  StoresHomePage(),
+                  AllStoresPage(),
                   Placeholder(),
-                  Placeholder(),
+                  CartPage(),
                   Placeholder()
                 ],
               ),
@@ -55,16 +75,9 @@ class StoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => StorePage(
-                      store: store,
-                    )));
-      },
       child: Card(
         child: Container(
+          height: 200,
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
@@ -75,13 +88,24 @@ class StoreCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Text(store.name,
                         style: Theme.of(context).textTheme.headlineSmall),
                     Text(
                       "Type: ${store.type}",
                       style: Theme.of(context).textTheme.bodyMedium,
-                    )
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => StorePage(
+                                        store: store,
+                                      )));
+                        },
+                        child: const Text("Visit Store"))
                   ],
                 ),
               )
@@ -93,50 +117,92 @@ class StoreCard extends StatelessWidget {
   }
 }
 
-class StoresHomePage extends StatelessWidget {
-  const StoresHomePage({super.key});
+class AllStoresPage extends StatelessWidget {
+  const AllStoresPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      children: const [
+      children: [
         StoreCard(
             store: Store(
                 name: "American Eagle",
                 type: "Clothing",
-                imagePath: "assets/stores-logos/ae.png")),
+                imagePath: "assets/stores/american-eagle/logo.png",
+                sections: [
+              Section(name: "T-Shirts", products: [
+                Product(
+                    name: "AE Super Soft Legend Henley",
+                    imagePath: "assets/stores/american-eagle/t-shirts/1.webp",
+                    price: 463.50)
+              ]),
+              Section(name: "Pants", products: []),
+              Section(name: "Shoes", products: [])
+            ])),
         StoreCard(
             store: Store(
                 name: "H&M",
                 type: "Clothing",
-                imagePath: "assets/stores-logos/hm.png"))
+                imagePath: "assets/stores/hm/logo.png",
+                sections: [
+              Section(name: "T-Shirts", products: []),
+              Section(name: "Pants", products: []),
+              Section(name: "Shoes", products: [])
+            ]))
       ],
     );
   }
 }
 
 class ProductCard extends StatelessWidget {
-  const ProductCard(
-      {super.key,
-      required this.imagePath,
-      required this.name,
-      required this.price});
-  final String imagePath;
-  final String name;
-  final String price;
+  const ProductCard({super.key, required this.product});
+  final Product product;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Image(image: AssetImage(imagePath)),
-        const SizedBox(
-          height: 30,
+    return Consumer<Cart>(builder: (context, cart, child) {
+      return Card(
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          height: 200,
+          child: Row(
+            children: [
+              Image(
+                image: AssetImage(product.imagePath),
+                width: 140,
+              ),
+              const SizedBox(
+                width: 20,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(product.name, style: const TextStyle(fontSize: 15)),
+                    Text(
+                      "E£${product.price}",
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          cart.add(product);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Item Added to Cart"),
+                            ),
+                          );
+                        },
+                        child: const Text("Add to Cart"))
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
-        Text(name, style: Theme.of(context).textTheme.headlineSmall),
-        Text("Price $price", style: Theme.of(context).textTheme.bodyMedium),
-      ],
-    );
+      );
+    });
   }
 }
 
@@ -145,33 +211,39 @@ class StorePage extends StatelessWidget {
   const StorePage({super.key, required this.store});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(store.name)),
-      body: Column(children: [
-        const SizedBox(
-          height: 40,
-        ),
-        Center(
-          child: Image(
-            image: AssetImage(store.imagePath),
-            height: 100,
+    return DefaultTabController(
+      length: store.sections.length,
+      child: Scaffold(
+          appBar: AppBar(
+            title: Text(store.name),
+            bottom: TabBar(
+                tabs: store.sections
+                    .map((e) => Tab(
+                          text: e.name,
+                        ))
+                    .toList()),
           ),
-        ),
-        const SizedBox(
-          height: 40,
-        ),
-        Expanded(
-          child: ListView(
-            children: const [
-              Card(
-                child: ListTile(
-                  title: Text("T-Shirts"),
-                ),
-              )
+          body: TabBarView(
+            children: [
+              StoreSectionPage(
+                section: store.sections[0],
+              ),
+              const Placeholder(),
+              const Placeholder()
             ],
-          ),
-        )
-      ]),
+          )),
+    );
+  }
+}
+
+class StoreSectionPage extends StatelessWidget {
+  final Section section;
+  const StoreSectionPage({super.key, required this.section});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: section.products.map((e) => ProductCard(product: e)).toList(),
     );
   }
 }
@@ -180,6 +252,39 @@ class Store {
   final String name;
   final String type;
   final String imagePath;
+  final List<Section> sections;
   const Store(
-      {required this.name, required this.type, required this.imagePath});
+      {required this.name,
+      required this.type,
+      required this.imagePath,
+      required this.sections});
+}
+
+class Product {
+  final String name;
+  final double price;
+  final String imagePath;
+
+  Product({required this.name, required this.price, required this.imagePath});
+}
+
+class Section {
+  final String name;
+  final List<Product> products;
+
+  Section({required this.name, required this.products});
+}
+
+class CartPage extends StatelessWidget {
+  const CartPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<Cart>(
+      builder: (context, cart, child) {
+        return ListView(
+          children: cart.products.map((e) => Text(e.name)).toList(),
+        );
+      },
+    );
+  }
 }
